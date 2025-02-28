@@ -55,7 +55,7 @@ const ChatBot = () => {
         <div className="relative min-h-screen bg-black text-white bg-cover bg-center bg-no-repeat">
             <div className="absolute inset-0 bg-black opacity-50"></div>
             <div className="relative z-10 flex flex-col items-center justify-center h-screen p-6">
-                <motion.h2 
+                <motion.h2
                     initial={{ y: -50, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
@@ -64,16 +64,16 @@ const ChatBot = () => {
                     AI Chatbot
                 </motion.h2>
                 <div className="w-full max-w-md border border-purple-500 rounded-xl shadow-lg backdrop-blur-lg p-4 bg-black/40 relative">
-                    <div className="h-80 overflow-y-auto space-y-2 p-2">
+                    <div className="h-80 overflow-y-auto space-y-2 p-2 flex flex-col">
                         {messages.map((msg, index) => (
                             <motion.div
                                 key={index}
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.3, delay: index * 0.1 }}
-                                className={`p-2 rounded-lg max-w-[75%] text-white ${msg.sender === "user" 
-                                    ? "bg-gradient-to-r from-blue-500 to-purple-400 self-end" 
-                                    : "bg-gray-700"}`}
+                                className={`p-2 pl-3 pr-4 rounded-3xl max-w-[75%] text-white ${msg.sender === "user"
+                                    ? "bg-gradient-to-r from-blue-500 to-purple-400 self-end text-right"
+                                    : "bg-gray-700 self-start text-left"}`}
                             >
                                 <span dangerouslySetInnerHTML={{ __html: formatText(msg.text) }} />
                             </motion.div>
