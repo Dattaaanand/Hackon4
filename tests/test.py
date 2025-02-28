@@ -3,16 +3,14 @@ from flask_cors import CORS
 import requests
 import os
 import re
-from dotenv import load_dotenv
+from dotenv import dotenv_values
+import json
 
-# Load environment variables
-load_dotenv()
+# Load environment variables from .env.local
+API_KEY = os.getenv("GEMINI_API_KEY")
 
 app = Flask(__name__)
 CORS(app)
-
-# Secure API Key from .env
-API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Difficulty levels mapping
 difficulty_levels = ["Basic", "Intermediate", "Advanced"]
@@ -22,7 +20,7 @@ question_data = {}  # Store last generated question
 def generate_question(level="Intermediate", topic="Ohm's Law"):
     """Generate an MCQ using AI based on difficulty level."""
     if not API_KEY:
-        return {"error": "API Key is missing. Check .env file."}
+        return {"error": "API Key is missing. Check .env.local file."}
 
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
     headers = {"Content-Type": "application/json"}
@@ -87,6 +85,55 @@ def generate_question(level="Intermediate", topic="Ohm's Law"):
 
     except requests.exceptions.RequestException as e:
         return {"error": f"API Error: {e}"}
+
+@app.route("/simplify-text", methods=["POST"])
+def simplify_text():
+    """Simplify a block of text using Gemini API."""
+    text_to_simplify = request.json.get("text")
+    if not text_to_simplify:
+        return jsonify({"error": "No text provided for simplification."}), 400
+
+    # Construct prompt for Gemini API
+    prompt = f"""
+    You are a tutor. Simplify the following text from a physics lab procedure to make it easier to understand for high school students:
+
+    **Text:** {text_to_simplify}
+
+    Provide a simplified version of the above text, focusing on clarity and avoiding technical jargon where possible.  Keep the core meaning intact. Respond with the simplified text only.
+    """
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
+    headers = {"Content-Type": "application/json"}
+    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
+        ai_response = response.json()
+
+        print("Request JSON:", request.json)  # DEBUG: Print the request JSON
+        print("AI Response:", ai_response)  # DEBUG: Print the AI response
+
+        # Extract the simplified text from the response
+        candidates = ai_response.get("candidates", [])
+        if candidates:
+            content = candidates[0].get("content", {})
+            parts = content.get("parts", [])
+            if parts:
+                simplified_text = parts[0].get("text", "")
+                if simplified_text:
+                    return jsonify({"simplified_text": simplified_text})
+                else:
+                    return jsonify({"error": "Simplified text not found in API response."}), 500
+            else:
+                return jsonify({"error": "Invalid API response structure."}), 500
+        else:
+            return jsonify({"error": "No candidates in API response."}), 500
+
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"API Request Error: {e}"}), 500
+    except Exception as e:
+        return jsonify({"error": f"An unexpected error occurred: {e}"}), 500
 
 
 @app.route("/generate-question", methods=["GET"])

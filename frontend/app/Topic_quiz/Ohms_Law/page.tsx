@@ -55,50 +55,45 @@ export default function OhmsLawQuiz() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-6">
-      <div className="bg-white shadow-lg rounded-xl p-6 w-full max-w-2xl text-center">
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">Ohm's Law Quiz</h1>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-black text-white p-6">
+      <div className="bg-gray-800 shadow-2xl rounded-2xl p-8 w-full max-w-2xl text-center border border-gray-700 backdrop-blur-md">
+        <h1 className="text-4xl font-extrabold text-blue-400 mb-6 drop-shadow-lg animate-pulse">Ohm's Law Quiz</h1>
 
         {questionData ? (
           <div>
-            <p className="text-gray-700 text-lg mb-4">{questionData?.question}</p>
-            <div className="flex flex-col items-start">
+            <p className="text-gray-300 text-lg mb-6 font-semibold italic">{questionData?.question}</p>
+            <div className="grid grid-cols-2 gap-6">
               {(["A", "B", "C", "D"] as const).map((option) => (
-                <label
+                <button
                   key={option}
-                  className="w-full p-2 bg-gray-800 text-white rounded-lg my-2 cursor-pointer hover:bg-gray-900"
+                  onClick={() => setSelectedAnswer(option)}
+                  className={`p-3 rounded-xl transition w-full text-left text-lg font-bold shadow-md transform duration-300 ${
+                    selectedAnswer === option ? "bg-blue-600 scale-105 shadow-lg" : "bg-gray-700 hover:bg-gray-600 hover:scale-105"
+                  }`}
                 >
-                  <input
-                    type="radio"
-                    name="answer"
-                    value={option}
-                    checked={selectedAnswer === option}
-                    className="mr-2"
-                    onChange={() => setSelectedAnswer(option)}
-                  />
                   {questionData?.[option]}
-                </label>
+                </button>
               ))}
             </div>
             <button
               onClick={submitAnswer}
-              className="px-6 py-2 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 transition mt-4"
+              className="px-6 py-3 bg-green-500 text-white font-bold rounded-xl shadow-lg hover:bg-green-600 transition-all duration-300 transform hover:scale-105 mt-6"
             >
               Submit Answer
             </button>
           </div>
         ) : (
-          <p className="text-gray-600 mb-4">Click the button to generate a question!</p>
+          <p className="text-gray-400 text-lg flex items-center justify-center h-32 font-medium">Click the button to generate a question!</p>
         )}
 
         <button
           onClick={fetchQuestion}
-          className="px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 transition mt-6"
+          className="px-6 py-3 bg-blue-500 text-white font-bold rounded-xl shadow-lg hover:bg-blue-600 transition-all duration-300 transform hover:scale-105 mt-8"
         >
           Get Question
         </button>
 
-        {feedback && <p className="mt-4 text-lg font-medium">{feedback}</p>}
+        {feedback && <p className="mt-6 text-xl font-semibold text-blue-400 animate-bounce">{feedback}</p>}
       </div>
     </div>
   );
