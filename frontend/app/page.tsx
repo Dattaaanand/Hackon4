@@ -22,12 +22,9 @@ export default function Home() {
       className="relative min-h-screen bg-black text-white bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: "url('/images/Landing.jpg')" }}
     >
-      {/* Dark Overlay */}
       <div className="absolute inset-0 bg-black opacity-50"></div>
 
-      {/* Content */}
       <div className="relative z-10">
-        {/* Navbar */}
         <nav className="w-full flex justify-between items-center px-8 py-4 bg-black shadow-lg">
           <h1 className="text-3xl font-extrabold text-transparent bg-clip-text 
                      bg-gradient-to-r from-blue-400 via-purple-500 to-violet-600">
@@ -38,7 +35,7 @@ export default function Home() {
             {[
               { name: "Attend Test", path: "/AttendTest" },
               { name: "Chatbot", path: "/chatbot" },
-              { name: "Quizzes", path: "/quizes" },
+              { name: "Quizzes", path: "/Quizzes" },
               { name: "Select Topic", path: "/Select_topic" },
               { name: "Topic Quiz", path: "/Topic_quiz" },
             ].map((item) => (
@@ -53,7 +50,6 @@ export default function Home() {
           </div>
         </nav>
 
-        {/* Hero Section with Animation */}
         <motion.div
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -69,7 +65,6 @@ export default function Home() {
           </p>
         </motion.div>
 
-        {/* Card Grid with Animation */}
         <div className="px-6 py-10">
           <h2 className="text-center text-3xl font-bold mb-6 text-transparent bg-clip-text 
                      bg-gradient-to-r from-blue-400 to-purple-500">
