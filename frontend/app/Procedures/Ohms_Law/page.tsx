@@ -1,16 +1,25 @@
 "use client";
 import React, { useState, useRef } from "react";
 
+// Type definitions
 interface Step {
   text: string;
-  isHeading?: boolean; // Optional property
+  isHeading?: boolean;
+}
+
+interface SimplifiedTextRecord {
+  [key: number]: string;
 }
 
 export default function Procedure() {
+  // State management
   const [selectedText, setSelectedText] = useState<string>("");
   const [simplifiedText, setSimplifiedText] = useState<string>("");
   const [selectedIndexes, setSelectedIndexes] = useState<Set<number>>(new Set());
-  const [simplifiedTexts, setSimplifiedTexts] = useState<Record<number, string>>({});
+  const [simplifiedTexts, setSimplifiedTexts] = useState<SimplifiedTextRecord>({});
+  const [isLoading, setIsLoading] = useState<Record<number, boolean>>({});
+  
+  // Refs
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Sample steps for Ohm's Law Procedure
@@ -103,41 +112,61 @@ export default function Procedure() {
     { text: "Zero correction for voltmeter, (-e2) = ......V." },
   ];
 
-  // Function to fetch simplified text from the backend
+  /**
+   * Fetches simplified text from the backend API
+   * @param text - The text to simplify
+   * @param index - The index of the step being simplified
+   */
   const fetchSimplifiedText = async (text: string, index: number) => {
-    const response = await fetch("http://localhost:5000/simplify-text", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ text }),
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      const simplified = data.simplified_text || "Simplified text not found.";
+    try {
+      setIsLoading(prev => ({ ...prev, [index]: true }));
       
-      // Use index directly to set the simplified text
-      setSimplifiedTexts((prev) => ({ ...prev, [index]: simplified }));
-      setSimplifiedText(simplified);
-    } else {
-      setSimplifiedText("Error occurred while simplifying text.");
+      const response = await fetch("http://localhost:5000/simplify-text", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const simplified = data.simplified_text || "Simplified text not found.";
+        
+        setSimplifiedTexts(prev => ({ ...prev, [index]: simplified }));
+        setSimplifiedText(simplified);
+      } else {
+        const errorMessage = "Error occurred while simplifying text.";
+        setSimplifiedTexts(prev => ({ ...prev, [index]: errorMessage }));
+        setSimplifiedText(errorMessage);
+      }
+    } catch (error) {
+      console.error("API request failed:", error);
+      setSimplifiedTexts(prev => ({ ...prev, [index]: "Failed to connect to simplification service." }));
+    } finally {
+      setIsLoading(prev => ({ ...prev, [index]: false }));
     }
   };
 
-  // Function to handle text selection
+  /**
+   * Handles text selection for simplification
+   * @param index - The index of the selected step
+   */
   const handleTextSelection = (index: number) => {
     const selection = window.getSelection();
-    if (selection && selection.toString()) {
+    if (selection && selection.toString().trim()) {
       const text = selection.toString();
       setSelectedText(text);
-      // Call fetchSimplifiedText with text and index
       fetchSimplifiedText(text, index);
     }
   };
 
+  /**
+   * Toggles the visibility of simplified text for a step
+   * @param index - The index of the clicked step
+   */
   const handleTextClick = (index: number) => {
-    setSelectedIndexes((prev) => {
+    setSelectedIndexes(prev => {
       const newIndexes = new Set(prev);
       if (newIndexes.has(index)) {
         newIndexes.delete(index);
@@ -148,45 +177,85 @@ export default function Procedure() {
     });
   };
 
-  return (
-    <div className="min-h-screen bg-black text-white p-6" ref={containerRef}>
-      <h1 className="text-4xl font-extrabold text-transparent bg-clip-text 
-                     bg-gradient-to-r from-blue-400 via-purple-500 to-violet-600 text-center mb-6">
-        Ohm's Law Procedure
-      </h1>
-      
-      {/* Instruction message */}
-      <div className="bg-gray-700 p-4 text-center text-lg rounded-md mb-6">
-        <p>Select text + click on it to simplify the text.</p>
-      </div>
+  // Component for rendering individual steps
+  const StepItem = ({ step, index }: { step: Step; index: number }) => {
+    if (step.isHeading) {
+      return (
+        <h2 className="text-2xl font-bold text-transparent bg-clip-text 
+                       bg-gradient-to-r from-blue-400 to-indigo-500 mt-8 mb-4">
+          {step.text}
+        </h2>
+      );
+    }
 
-      <div className="max-w-3xl mx-auto">
-        {steps.map((step, index) => (
-          <div key={index} className="mb-4">
-            {step.isHeading ? (
-              <h2 className="text-xl font-semibold text-transparent bg-clip-text 
-                             bg-gradient-to-r from-blue-400 to-indigo-500 mt-4">
-                {step.text}
-              </h2>
-            ) : (
-              <span
-                className="text-lg text-gray-300 cursor-text"
-                onMouseUp={() => handleTextSelection(index)} // Pass index here
-                onClick={() => handleTextClick(index)}
-                style={{ display: "inline-block", marginBottom: "0.5rem" }}
-              >
-                {step.text}
-              </span>
-            )}
-            {/* Show Simplified Text only if the index is selected */}
-            {selectedIndexes.has(index) && (
-              <div className="mt-2 p-2 bg-gray-800 bg-opacity-90 text-white rounded-lg">
-                <p className="text-sm">{simplifiedTexts[index] || simplifiedText}</p>
+    return (
+      <div className="mb-4 group">
+        <div 
+          className="text-lg text-gray-200 cursor-pointer transition-colors duration-200 
+                   hover:text-white hover:bg-gray-800 p-2 rounded-md"
+          onMouseUp={() => handleTextSelection(index)}
+          onClick={() => handleTextClick(index)}
+        >
+          {step.text}
+          <span className="hidden group-hover:inline-block ml-2 text-xs text-blue-400">
+            {selectedIndexes.has(index) ? "Click to hide" : "Click to simplify"}
+          </span>
+        </div>
+        
+        {selectedIndexes.has(index) && (
+          <div className="mt-2 p-3 bg-gray-800 bg-opacity-90 text-white rounded-lg border-l-4 border-blue-500 transition-all duration-300">
+            {isLoading[index] ? (
+              <div className="flex items-center justify-center py-4">
+                <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <span className="ml-2 text-blue-400">Simplifying...</span>
               </div>
+            ) : (
+              <p className="text-md">{simplifiedTexts[index] || "Select text to simplify"}</p>
             )}
           </div>
-        ))}
+        )}
       </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white p-6" ref={containerRef}>
+      <header className="max-w-4xl mx-auto mb-12 text-center">
+        <h1 className="text-5xl font-extrabold text-transparent bg-clip-text 
+                     bg-gradient-to-r from-blue-400 via-purple-500 to-violet-600 pb-2">
+          Ohm's Law Procedure
+        </h1>
+        <p className="text-gray-400 mt-4 text-lg">
+          Interactive guide with text simplification
+        </p>
+      </header>
+      
+      {/* Instruction card */}
+      <div className="fixed top-1/2 right-4 transform -translate-y-1/2 bg-gray-800 p-5 text-center 
+                     rounded-lg shadow-xl border border-gray-700 max-w-xs z-10 opacity-90 hover:opacity-100 transition-opacity">
+        <h3 className="text-blue-400 font-semibold mb-2">How to use</h3>
+        <p className="text-gray-300">
+          1. Select text you want to simplify
+        </p>
+        <p className="text-gray-300">
+          2. Click on the text to toggle simplified view
+        </p>
+        <div className="mt-3 text-xs text-gray-500">
+          Simplified text appears below the selected text
+        </div>
+      </div>
+
+      <main className="max-w-3xl mx-auto bg-gray-900 bg-opacity-60 rounded-xl p-6 shadow-2xl">
+        <div className="space-y-2">
+          {steps.map((step, index) => (
+            <StepItem key={index} step={step} index={index} />
+          ))}
+        </div>
+      </main>
+      
+      <footer className="max-w-3xl mx-auto mt-8 text-center text-gray-500 text-sm">
+        <p>Physics Virtual Lab &copy; {new Date().getFullYear()}</p>
+      </footer>
     </div>
   );
 }
