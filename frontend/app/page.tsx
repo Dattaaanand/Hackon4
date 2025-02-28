@@ -1,6 +1,13 @@
-import { redirect } from "next/navigation";
+
+import Image from "next/image";
+import AttendTest from "../app/AttendTest/page"
 
 export default function Home() {
-  redirect("/Quizes");
+  return (
+    <>
+      {/* redirect("/Quizes"); */}
+      <AttendTest/>
+    </>
+  );
 }
   
