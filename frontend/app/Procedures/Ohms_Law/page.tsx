@@ -1,11 +1,33 @@
 "use client";
 import React, { useState, useRef } from "react";
+import DOMPurify from "dompurify";
+import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
+import { motion } from "framer-motion";
+
+const navItems = [
+  { name: "Home", path: "/" },
+  { name: "Attend Test", path: "/AttendTest" },
+  { name: "Chatbot", path: "/chatbot" },
+  { name: "Quizzes", path: "/Quizzes" },
+  { name: "Select Topic", path: "/Select_topic" },
+  { name: "Topic Quiz", path: "/Topic_quiz" },
+];
 
 // Type definitions
 interface Step {
   text: string;
   isHeading?: boolean;
 }
+
+const formatText = (text: string) => {
+  let formatted = text
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // Bold
+    .replace(/_(.*?)_/g, "<em>$1</em>") // Italic
+    .replace(/__(.*?)__/g, "<u>$1</u>") // Underline
+    .replace(/`(.*?)`/g, "<code>$1</code>"); // Inline code
+  return DOMPurify.sanitize(formatted);
+};
 
 interface SimplifiedTextRecord {
   [key: number]: string;
@@ -18,7 +40,9 @@ export default function Procedure() {
   const [selectedIndexes, setSelectedIndexes] = useState<Set<number>>(new Set());
   const [simplifiedTexts, setSimplifiedTexts] = useState<SimplifiedTextRecord>({});
   const [isLoading, setIsLoading] = useState<Record<number, boolean>>({});
-  
+  const router = useRouter();
+  const pathname = usePathname();
+
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -120,7 +144,7 @@ export default function Procedure() {
   const fetchSimplifiedText = async (text: string, index: number) => {
     try {
       setIsLoading(prev => ({ ...prev, [index]: true }));
-      
+
       const response = await fetch("http://localhost:5000/simplify-text", {
         method: "POST",
         headers: {
@@ -132,7 +156,7 @@ export default function Procedure() {
       if (response.ok) {
         const data = await response.json();
         const simplified = data.simplified_text || "Simplified text not found.";
-        
+
         setSimplifiedTexts(prev => ({ ...prev, [index]: simplified }));
         setSimplifiedText(simplified);
       } else {
@@ -189,38 +213,74 @@ export default function Procedure() {
     }
 
     return (
-      <div className="mb-4 group">
-        <div 
-          className="text-lg text-gray-200 cursor-pointer transition-colors duration-200 
+      <>
+        <div className="mb-4 group">
+          <div
+            className="text-lg text-gray-200 cursor-pointer transition-colors duration-200 
                    hover:text-white hover:bg-gray-800 p-2 rounded-md"
-          onMouseUp={() => handleTextSelection(index)}
-          onClick={() => handleTextClick(index)}
-        >
-          {step.text}
-          <span className="hidden group-hover:inline-block ml-2 text-xs text-blue-400">
-            {selectedIndexes.has(index) ? "Click to hide" : "Click to simplify"}
-          </span>
-        </div>
-        
-        {selectedIndexes.has(index) && (
-          <div className="mt-2 p-3 bg-gray-800 bg-opacity-90 text-white rounded-lg border-l-4 border-blue-500 transition-all duration-300">
-            {isLoading[index] ? (
-              <div className="flex items-center justify-center py-4">
-                <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                <span className="ml-2 text-blue-400">Simplifying...</span>
-              </div>
-            ) : (
-              <p className="text-md">{simplifiedTexts[index] || "Select text to simplify"}</p>
-            )}
+            onMouseUp={() => handleTextSelection(index)}
+            onClick={() => handleTextClick(index)}
+          >
+            {step.text}
+            <span className="hidden group-hover:inline-block ml-2 text-xs text-blue-400">
+              {selectedIndexes.has(index) ? "Click to hide" : "Click to simplify"}
+            </span>
           </div>
-        )}
-      </div>
+
+          {selectedIndexes.has(index) && (
+            <div className="mt-2 p-3 bg-gray-800 bg-opacity-90 text-white rounded-lg border-l-4 border-blue-500 transition-all duration-300">
+              {isLoading[index] ? (
+                <div className="flex items-center justify-center py-4">
+                  <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="ml-2 text-blue-400">Simplifying...</span>
+                </div>
+              ) : (
+                <p className="text-md">{simplifiedTexts[index] || "Select text to simplify"}</p>
+              )}
+            </div>
+          )}
+        </div>
+      </>
     );
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white p-6" ref={containerRef}>
-      <header className="max-w-4xl mx-auto mb-12 text-center">
+      <motion.nav
+        initial={{ y: -50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6 }}
+        className="fixed top-0 left-0 w-full flex justify-between items-center px-8 py-4 bg-black/50 backdrop-blur-md shadow-lg z-50"
+      >
+        <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-violet-600">
+          OLABS
+        </h1>
+        <div className="flex space-x-6">
+          {navItems.map((item) => (
+            <motion.div
+              key={item.path}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Link href={item.path}>
+                <div
+                  className={`px-4 py-2 text-lg font-semibold text-transparent bg-clip-text 
+                            bg-gradient-to-r from-blue-400 via-purple-500 to-violet-600 
+                            hover:text-gray-300 transition-all duration-300 cursor-pointer 
+                            ${pathname === item.path
+                      ? "underline decoration-purple-500 underline-offset-4"
+                      : ""
+                    }`}
+                >
+                  {item.name}
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      </motion.nav>
+
+      <header className="max-w-4xl mx-auto mb-12 text-center pt-20">
         <h1 className="text-5xl font-extrabold text-transparent bg-clip-text 
                      bg-gradient-to-r from-blue-400 via-purple-500 to-violet-600 pb-2">
           Ohm's Law Procedure
@@ -229,9 +289,9 @@ export default function Procedure() {
           Interactive guide with text simplification
         </p>
       </header>
-      
+
       {/* Instruction card */}
-      <div className="fixed top-1/2 right-4 transform -translate-y-1/2 bg-gray-800 p-5 text-center 
+      <div className="fixed top-1/2 right-20 transform -translate-y-1/2 bg-gray-800 p-5 text-center 
                      rounded-lg shadow-xl border border-gray-700 max-w-xs z-10 opacity-90 hover:opacity-100 transition-opacity">
         <h3 className="text-blue-400 font-semibold mb-2">How to use</h3>
         <p className="text-gray-300">
@@ -252,9 +312,9 @@ export default function Procedure() {
           ))}
         </div>
       </main>
-      
+
       <footer className="max-w-3xl mx-auto mt-8 text-center text-gray-500 text-sm">
-        <p>Physics Virtual Lab &copy; {new Date().getFullYear()}</p>
+        <p>Olabs  &copy; {new Date().getFullYear()}</p>
       </footer>
     </div>
   );
