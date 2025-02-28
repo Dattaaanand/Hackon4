@@ -14,6 +14,7 @@ export default function OhmsLawQuiz() {
   const [questionData, setQuestionData] = useState<QuestionData | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<string>("");
   const [feedback, setFeedback] = useState<string>("");
+  const [explanation, setExplanation] = useState<string>("");
 
   const fetchQuestion = async () => {
     try {
@@ -24,6 +25,7 @@ export default function OhmsLawQuiz() {
         setQuestionData(data);
         setSelectedAnswer("");
         setFeedback("");
+        setExplanation("");
       } else {
         setFeedback("Failed to generate a question.");
       }
@@ -49,6 +51,7 @@ export default function OhmsLawQuiz() {
 
       const data = await response.json();
       setFeedback(data.message);
+      setExplanation(data.explanation);
     } catch (error) {
       setFeedback("Error submitting answer.");
     }
@@ -67,9 +70,8 @@ export default function OhmsLawQuiz() {
                 <button
                   key={option}
                   onClick={() => setSelectedAnswer(option)}
-                  className={`p-3 rounded-xl transition w-full text-left text-lg font-bold shadow-md transform duration-300 ${
-                    selectedAnswer === option ? "bg-blue-600 scale-105 shadow-lg" : "bg-gray-700 hover:bg-gray-600 hover:scale-105"
-                  }`}
+                  className={`p-3 rounded-xl transition w-full text-left text-lg font-bold shadow-md transform duration-300 ${selectedAnswer === option ? "bg-blue-600 scale-105 shadow-lg" : "bg-gray-700 hover:bg-gray-600 hover:scale-105"
+                    }`}
                 >
                   {questionData?.[option]}
                 </button>
@@ -94,6 +96,12 @@ export default function OhmsLawQuiz() {
         </button>
 
         {feedback && <p className="mt-6 text-xl font-semibold text-blue-400 animate-bounce">{feedback}</p>}
+
+        {explanation && (
+          <div className="mt-6 p-4 bg-gray-700 rounded-xl text-gray-200 text-lg shadow-md border border-gray-600">
+            <strong>Explanation:</strong> {explanation}
+          </div>
+        )}
       </div>
     </div>
   );
