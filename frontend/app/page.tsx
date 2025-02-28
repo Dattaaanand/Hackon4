@@ -1,8 +1,11 @@
 "use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 
 export default function Home() {
+  const pathname = usePathname();
+
   const categories = [
     { name: "PHYSICS", gradient: "from-purple-500 to-blue-400" },
     { name: "CHEMISTRY", gradient: "from-pink-500 to-purple-400" },
@@ -17,6 +20,15 @@ export default function Home() {
     { name: "ISL", gradient: "from-blue-500 to-cyan-400" },
   ];
 
+  const navItems = [
+    { name: "Home", path: "/" },
+    { name: "Attend Test", path: "/AttendTest" },
+    { name: "Chatbot", path: "/chatbot" },
+    { name: "Quizzes", path: "/Quizzes" },
+    { name: "Select Topic", path: "/Select_topic" },
+    { name: "Topic Quiz", path: "/Topic_quiz" },
+  ];
+
   return (
     <div
       className="relative min-h-screen bg-black text-white bg-cover bg-center bg-no-repeat"
@@ -25,24 +37,26 @@ export default function Home() {
       <div className="absolute inset-0 bg-black opacity-50"></div>
 
       <div className="relative z-10">
-        <nav className="w-full flex justify-between items-center px-8 py-4 bg-black shadow-lg">
+        {/* Navbar */}
+        <nav className="w-full flex justify-between items-center px-8 py-4 bg-transparent backdrop-blur-lg shadow-lg">
           <h1 className="text-3xl font-extrabold text-transparent bg-clip-text 
                      bg-gradient-to-r from-blue-400 via-purple-500 to-violet-600">
             OLABS
           </h1>
 
           <div className="flex space-x-6">
-            {[
-              { name: "Attend Test", path: "/AttendTest" },
-              { name: "Chatbot", path: "/chatbot" },
-              { name: "Quizzes", path: "/Quizzes" },
-              { name: "Select Topic", path: "/Select_topic" },
-              { name: "Topic Quiz", path: "/Topic_quiz" },
-            ].map((item) => (
+            {navItems.map((item) => (
               <Link key={item.path} href={item.path}>
-                <div className="px-4 py-2 text-lg font-semibold text-transparent bg-clip-text 
-                            bg-gradient-to-r from-blue-400 via-purple-500 to-violet-600 
-                            hover:text-gray-300 transition-all duration-300 cursor-pointer">
+                <div
+                  className={`px-4 py-2 text-lg font-semibold text-transparent bg-clip-text 
+                              bg-gradient-to-r from-blue-400 via-purple-500 to-violet-600 
+                              hover:text-gray-300 transition-all duration-300 cursor-pointer 
+                              ${
+                                pathname === item.path
+                                  ? "underline decoration-purple-500 underline-offset-4"
+                                  : ""
+                              }`}
+                >
                   {item.name}
                 </div>
               </Link>
@@ -50,6 +64,7 @@ export default function Home() {
           </div>
         </nav>
 
+        {/* Hero Section */}
         <motion.div
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -65,6 +80,7 @@ export default function Home() {
           </p>
         </motion.div>
 
+        {/* Categories Section */}
         <div className="px-6 py-10">
           <h2 className="text-center text-3xl font-bold mb-6 text-transparent bg-clip-text 
                      bg-gradient-to-r from-blue-400 to-purple-500">

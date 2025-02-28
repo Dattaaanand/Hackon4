@@ -2,77 +2,112 @@
 
 import { useState } from "react";
 import { FaArrowLeft } from "react-icons/fa";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
+
+const navItems = [
+  { name: "Home", path: "/" },
+  { name: "Attend Test", path: "/AttendTest" },
+  { name: "Chatbot", path: "/chatbot" },
+  { name: "Quizzes", path: "/Quizzes" },
+  { name: "Select Topic", path: "/Select_topic" },
+  { name: "Topic Quiz", path: "/Topic_quiz" },
+];
 
 const Page = () => {
-    const [formData, setFormData] = useState({
-        aim: "",
-        apparatus: "",
-        procedure: "",
-        observations: "",
-        conclusion: "",
+  const [formData, setFormData] = useState({
+    aim: "",
+    apparatus: "",
+    procedure: "",
+    observations: "",
+    conclusion: "",
+  });
+
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const response = await fetch("http://127.0.0.1:5000/compare", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
     });
+    const data = await response.json();
+    alert(`Accuracy Score: ${data.score}`);
+  };
 
-    const router = useRouter();
-    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        const response = await fetch("http://127.0.0.1:5000/compare", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(formData),
-        });
-
-        const data = await response.json();
-        alert(`Accuracy Score: ${data.score}`);
-    };
-
-    return (
-        <div className="relative min-h-screen flex items-center justify-center bg-cover bg-center text-white font-roboto"
-            style={{ backgroundImage: "url('/images/Background.jpg')" }}>
-
-            <div className="absolute inset-0 bg-black/70"></div>
-
-            <div className="relative max-w-3xl w-full bg-black/40 p-10 rounded-2xl shadow-2xl border border-white/20 shadow-[0_0_10px_rgba(255,255,255,0.2)]">
-                <FaArrowLeft
-                    className="absolute top-5 left-5 text-white text-2xl cursor-pointer hover:text-gray-300 transition"
-                    onClick={() => router.push("/")}
-                />
-                <h2 className="text-4xl font-extrabold font-serif text-center mb-6">Experiment Form</h2>
-                <form className="space-y-6" onSubmit={handleSubmit}>
-                    {[
-                        { label: "Aim", name: "aim", placeholder: "Enter the aim" },
-                        { label: "Apparatus", name: "apparatus", placeholder: "List the apparatus" },
-                        { label: "Procedure", name: "procedure", placeholder: "Describe the steps" },
-                        { label: "Observations", name: "observations", placeholder: "Enter observations" },
-                        { label: "Conclusion", name: "conclusion", placeholder: "Summarize the findings" },
-                    ].map((field) => (
-                        <div key={field.name} className="relative">
-                            <label className="block text-lg font-serif font-extrabold text-gray-300 mb-1">{field.label}</label>
-                            <textarea
-                                name={field.name}
-                                value={formData[field.name]}
-                                onChange={handleChange}
-                                placeholder={field.placeholder}
-                                rows={3}
-                                className="w-full p-3 border border-gray-600 rounded-lg bg-black/20 text-white placeholder-gray-400 focus:ring-2 focus:ring-red-500 backdrop-blur-sm"
-                            />
-                        </div>
-                    ))}
-                    <button
-                        type="submit"
-                        className="w-full py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
-                    >
-                        Submit
-                    </button>
-                </form>
-            </div>
+  return (
+    <div className="relative min-h-screen bg-black text-white font-roboto">
+      {/* Navbar */}
+      <nav className="fixed top-0 left-0 w-full flex justify-between items-center px-8 py-4 bg-black/50 backdrop-blur-md shadow-lg z-50">
+        <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-violet-600">
+          OLABS
+        </h1>
+        <div className="flex space-x-6">
+          {navItems.map((item) => (
+            <Link key={item.path} href={item.path}>
+              <div
+                className={`px-4 py-2 text-lg font-semibold text-transparent bg-clip-text 
+                          bg-gradient-to-r from-blue-400 via-purple-500 to-violet-600 
+                          hover:text-gray-300 transition-all duration-300 cursor-pointer 
+                          ${
+                            pathname === item.path
+                              ? "underline decoration-purple-500 underline-offset-4"
+                              : ""
+                          }`}
+              >
+                {item.name}
+              </div>
+            </Link>
+          ))}
         </div>
-    );
+      </nav>
+
+      {/* Background Image */}
+      <div className="absolute inset-0 bg-[url('/images/Landing.jpg')] bg-cover bg-center opacity-30"></div>
+
+      {/* Content Section */}
+      <div className="flex items-center justify-center min-h-screen pt-20">
+        <div className="relative w-full max-w-2xl m-6 sm:m-12 bg-black/60 p-8 rounded-2xl border border-purple-500 shadow-[0_0_20px_rgba(128,0,128,0.6)] backdrop-blur-lg">
+          <FaArrowLeft
+            className="absolute top-5 left-5 text-purple-400 text-2xl cursor-pointer hover:text-purple-300 transition"
+            onClick={() => router.push("/")}
+          />
+          <h2 className="text-3xl font-extrabold font-serif text-center mb-6 text-purple-300">
+            Experiment Form
+          </h2>
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            {["aim", "apparatus", "procedure", "observations", "conclusion"].map((field) => (
+              <div key={field} className="relative">
+                <label className="block text-lg font-serif font-extrabold text-purple-300 mb-1 capitalize">
+                  {field}
+                </label>
+                <textarea
+                  name={field}
+                  value={formData[field as keyof typeof formData]}
+                  onChange={handleChange}
+                  placeholder={`Enter ${field}`}
+                  rows={3}
+                  className="w-full p-3 border border-purple-500 rounded-lg bg-black/40 text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 backdrop-blur-sm"
+                />
+              </div>
+            ))}
+            <button
+              type="submit"
+              className="w-full py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition shadow-[0_0_15px_rgba(128,0,128,0.8)]"
+            >
+              Submit
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default Page;
