@@ -18,21 +18,32 @@ const Page = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        const response = await fetch("http://127.0.0.1:5000/compare", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(formData),
+        });
+
+        const data = await response.json();
+        alert(`Accuracy Score: ${data.score}`);
+    };
+
     return (
         <div className="relative min-h-screen flex items-center justify-center bg-cover bg-center text-white font-roboto"
             style={{ backgroundImage: "url('/images/Background.jpg')" }}>
 
-            {/* Dark overlay only on background */}
             <div className="absolute inset-0 bg-black/70"></div>
 
-            {/* Form Container (kept above the overlay) */}
             <div className="relative max-w-3xl w-full bg-black/40 p-10 rounded-2xl shadow-2xl border border-white/20 shadow-[0_0_10px_rgba(255,255,255,0.2)]">
                 <FaArrowLeft
                     className="absolute top-5 left-5 text-white text-2xl cursor-pointer hover:text-gray-300 transition"
                     onClick={() => router.push("/")}
                 />
                 <h2 className="text-4xl font-extrabold font-serif text-center mb-6">Experiment Form</h2>
-                <form className="space-y-6">
+                <form className="space-y-6" onSubmit={handleSubmit}>
                     {[
                         { label: "Aim", name: "aim", placeholder: "Enter the aim" },
                         { label: "Apparatus", name: "apparatus", placeholder: "List the apparatus" },
@@ -41,7 +52,7 @@ const Page = () => {
                         { label: "Conclusion", name: "conclusion", placeholder: "Summarize the findings" },
                     ].map((field) => (
                         <div key={field.name} className="relative">
-                            <label className="block text-lg font-serif font-stretch-50% font-extrabold text-gray-300 mb-1">{field.label}</label>
+                            <label className="block text-lg font-serif font-extrabold text-gray-300 mb-1">{field.label}</label>
                             <textarea
                                 name={field.name}
                                 value={formData[field.name]}
