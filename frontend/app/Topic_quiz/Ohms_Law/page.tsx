@@ -15,11 +15,8 @@ interface QuestionData {
 
 const navItems = [
   { name: "Home", path: "/" },
-  { name: "Attend Test", path: "/AttendTest" },
   { name: "Chatbot", path: "/chatbot" },
   { name: "Quizzes", path: "/Quizzes" },
-  { name: "Select Topic", path: "/Select_topic" },
-  { name: "Topic Quiz", path: "/Topic_quiz" },
 ];
 
 export default function OhmsLawQuiz() {

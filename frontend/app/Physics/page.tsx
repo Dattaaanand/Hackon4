@@ -4,7 +4,14 @@ import { motion } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 
+// Separate arrays for navbar and box items
 const navItems = [
+    { name: "Home", path: "/", subject: "Physics" },
+    { name: "Quizzes", path: "/Quizzes", subject: "Physics" },
+    { name: "Procedure", path: "/Topic_select", subject: "Physics" },
+];
+
+const boxItems = [
     { name: "Attend Test", path: "/AttendTest", subject: "Physics" },
     { name: "Quizzes", path: "/Quizzes", subject: "Physics" },
     { name: "Procedure", path: "/Topic_select", subject: "Physics" },
@@ -66,10 +73,9 @@ const ChatBot = () => {
                 <div className="px-6 py-10 flex justify-start items-center min-h-[80vh]">
                     <div className="w-full max-w-6xl ml-125"> {/* Shifted content to the right */}
 
-
                         {/* Updated Grid */}
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 justify-center">
-                            {navItems.map((item, index) => (
+                            {boxItems.map((item, index) => (
                                 <motion.div
                                     key={index}
                                     initial={{ opacity: 0, y: 20 }}
