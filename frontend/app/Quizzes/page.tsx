@@ -26,7 +26,7 @@ export default function QuizPage() {
     { name: "Topic Quiz", path: "/Topic_quiz" },
   ];
   
-  const handleSubjectClick = (subject) => {
+  const handleSubjectClick = (subject: string | number | boolean) => {
     router.push(`/Select_topic?subject=${encodeURIComponent(subject)}`);
   };
 
