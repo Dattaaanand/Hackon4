@@ -75,9 +75,9 @@ def compare_procedure(extracted_text):
                 "text": f"""
 Compare the following procedure with the original blueprint and rate its accuracy out of 10. Follow these strict deduction rules:
 
-- **Incorrect Chemical Equation**: Deduct **only 1 mark** if the equation does not match exactly.
-- **Missing Apparatus**: Deduct **only 1 mark** if at least 5 apparatus are missing. Do not deduct more than 1 mark for apparatus.
-- **Incorrect Aim**: Deduct **only 1 mark** if the aim does not match exactly.
+- **Chemical Equation**: Deduct **only 1 mark** if the equation does not match exactly.
+- **Apparatus**: Deduct **only 1 mark** if at least 2 apparatus are missing. Do not deduct more than 1 mark for apparatus.
+- **Aim**: Deduct **only 1 mark** if the aim does not match exactly.
 - **Procedure Accuracy**: If the steps are mostly correct, do not deduct any marks.
 
 **Original Blueprint:**
