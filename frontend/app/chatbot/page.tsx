@@ -64,7 +64,7 @@ const ChatBot = () => {
 
     return (
         <div className="relative min-h-screen bg-black text-white flex items-center justify-center p-6">
-            
+
             <motion.nav
                 initial={{ y: -50, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -100,52 +100,69 @@ const ChatBot = () => {
             </motion.nav>
 
             <motion.div
+                className="absolute left-80 top-1/2 transform -translate-y-1/2"
+                whileHover={{ scale: 1.1, rotate: 10 }}
+                transition={{ type: "spring", stiffness: 300 }}
+            >
+                <motion.img
+                    src="/images/robo.png"
+                    alt="Chatbot"
+                    className="w-80 h-80"
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                />
+            </motion.div>
+
+            <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, ease: "easeOut" }}
-                className="w-full max-w-md border border-purple-500 rounded-xl shadow-lg backdrop-blur-lg p-4 bg-black/60 relative"
+                className="w-full max-w-md border border-purple-500 rounded-xl shadow-lg backdrop-blur-lg p-4 bg-black/60 relative flex"
             >
-                <motion.h2
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.5 }}
-                    className="text-3xl font-bold mb-4 text-center text-purple-300"
-                >
-                    AI Chatbot
-                </motion.h2>
-                <div className="h-80 overflow-y-auto space-y-2 p-2 flex flex-col">
-                    {messages.map((msg, index) => (
-                        <motion.div
-                            key={index}
-                            initial={{ opacity: 0, x: msg.sender === "user" ? 30 : -30 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.3, delay: index * 0.1 }}
-                            className={`p-2 pl-3 pr-4 rounded-3xl max-w-[75%] text-white ${msg.sender === "user"
-                                ? "bg-gradient-to-r from-blue-500 to-purple-400 self-end text-right"
-                                : "bg-gray-700 self-start text-left"}`}
-                        >
-                            <span dangerouslySetInnerHTML={{ __html: formatText(msg.text) }} />
-                        </motion.div>
-                    ))}
-                </div>
-                <div className="flex mt-2">
-                    <motion.input
-                        type="text"
-                        className="flex-grow p-2 rounded-l-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        placeholder="Type a message..."
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                        whileFocus={{ scale: 1.02 }}
-                    />
-                    <motion.button
-                        onClick={handleSend}
-                        className="px-4 bg-gradient-to-r from-blue-400 to-purple-500 text-white rounded-r-lg hover:opacity-80 transition-all"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                <div className="flex-grow">
+                    <motion.h2
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.5 }}
+                        className="text-3xl font-bold mb-4 text-center text-purple-300"
                     >
-                        Send
-                    </motion.button>
+                        AI Chatbot
+                    </motion.h2>
+                    <div className="h-80 overflow-y-auto space-y-2 p-2 flex flex-col">
+                        {messages.map((msg, index) => (
+                            <motion.div
+                                key={index}
+                                initial={{ opacity: 0, x: msg.sender === "user" ? 30 : -30 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.3, delay: index * 0.1 }}
+                                className={`p-2 pl-3 pr-4 rounded-3xl max-w-[75%] text-white ${msg.sender === "user"
+                                    ? "bg-gradient-to-r from-blue-500 to-purple-400 self-end text-right"
+                                    : "bg-gray-700 self-start text-left"}`}
+                            >
+                                <span dangerouslySetInnerHTML={{ __html: formatText(msg.text) }} />
+                            </motion.div>
+                        ))}
+                    </div>
+                    <div className="flex mt-2">
+                        <motion.input
+                            type="text"
+                            className="flex-grow p-2 rounded-l-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            placeholder="Type a message..."
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                            whileFocus={{ scale: 1.02 }}
+                        />
+                        <motion.button
+                            onClick={handleSend}
+                            className="px-4 bg-gradient-to-r from-blue-400 to-purple-500 text-white rounded-r-lg hover:opacity-80 transition-all"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            Send
+                        </motion.button>
+                    </div>
                 </div>
             </motion.div>
         </div>
