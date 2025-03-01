@@ -8,7 +8,7 @@ import re
 API_KEY = os.getenv("GEMINI_API_KEY")
 
 app = Flask(__name__)
-CORS(app)
+CORS(app)  # Enable CORS
 
 # Difficulty levels mapping
 difficulty_levels = ["Basic", "Intermediate", "Advanced"]
@@ -91,11 +91,17 @@ def simplify_text():
         return jsonify({"error": "No text provided for simplification."}), 400
 
     prompt = f"""
-    You are a tutor. Simplify the following text from a physics lab procedure to make it easier to understand for high school students:
+    You are a tutor. Simplify the following text from a physics lab procedure to make it easier to understand for high school students and explain the purpose of the instruction. 
+    
+    The text to simplify is: {text_to_simplify}
 
-    **Text:** {text_to_simplify}
-
-    Provide a simplified version of the above text, focusing on clarity and avoiding technical jargon where possible. Keep the core meaning intact.
+    Your response should be in this format:
+    
+    Simplified Text: [your simplified version here]
+    
+    Purpose: [explain why this instruction is important]
+    
+    Provide the simplified text focusing on clarity and avoiding technical jargon where possible. Keep the core meaning intact.
     """
 
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
@@ -110,6 +116,15 @@ def simplify_text():
         # Extract simplified text
         simplified_text = ai_response.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
 
+        # Format processing to remove ** and other markdown characters
+        simplified_text = simplified_text.replace("**Simplified Text:**", "Simplified Text:")
+        simplified_text = simplified_text.replace("**Purpose:**", "Purpose:")
+        simplified_text = simplified_text.replace("**", "")
+        simplified_text = simplified_text.replace("***", "")
+        
+        # Remove any extra whitespace and ensure consistent formatting
+        simplified_text = simplified_text.strip()
+        
         if simplified_text:
             return jsonify({"simplified_text": simplified_text})
         return jsonify({"error": "Simplified text not found in API response."}), 500
@@ -189,5 +204,26 @@ def generate_explanation(question, correct_answer, question_data):
     except requests.exceptions.RequestException as e:
         return f"API Request Error: {e}"
 
+@app.route('/api/text-to-speech', methods=['POST'])
+def text_to_speech():
+    """Convert text to speech using Voice RSS API."""
+    data = request.get_json()
+    if 'text' not in data:
+        return jsonify({'error': 'Text is required.'}), 400
+
+    text = data['text']
+    url = f'https://api.voicerss.org/?key=cee124818c53400f81056fb6fb251eb4&src={text}&hl=en-us&r=0&c=mp3&f=44khz_16bit_stereo'
+    
+    try:
+        response = requests.get(url)
+        if response.status_code != 200:
+            return jsonify({'error': 'Failed to fetch audio response'}), response.status_code
+
+        audio_url = response.text  # Getting the audio URL from the response
+        return jsonify({'audioUrl': audio_url})
+    except Exception as e:
+        print(f'Error fetching audio: {e}')
+        return jsonify({'error': 'Internal server error'}), 500
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5000)  # Start on port 5000

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import DOMPurify from "dompurify";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
@@ -40,6 +40,7 @@ export default function Procedure() {
   const [simplifiedTexts, setSimplifiedTexts] = useState<SimplifiedTextRecord>({});
   const [isLoading, setIsLoading] = useState<Record<number, boolean>>({});
   const [isChatboxVisible, setIsChatboxVisible] = useState<boolean>(false);
+  const [isSpeaking, setIsSpeaking] = useState<boolean>(false); // New state for speech status
   const router = useRouter();
   const pathname = usePathname();
 
@@ -136,14 +137,52 @@ export default function Procedure() {
     { text: "Zero correction for voltmeter, (-e2) = ......V." },
   ];
 
-  /**
-   * Fetches simplified text from the backend API
-   * @param text - The text to simplify
-   * @param index - The index of the step being simplified
-   */
+  // Speech synthesis logic
+  const utterance = useRef<SpeechSynthesisUtterance | null>(null);
+
+  const readProcedure = () => {
+    const fullText = steps.map((step) => step.text).join(" ");
+
+    if (isSpeaking) {
+      // If already speaking, stop the speech
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    } else {
+      // Create a new SpeechSynthesisUtterance instance if not already speaking
+      utterance.current = new SpeechSynthesisUtterance(fullText);
+      utterance.current.lang = 'en-US';
+      utterance.current.pitch = 1;
+      utterance.current.rate = 1;
+      utterance.current.volume = 1;
+
+      // Start speaking
+      window.speechSynthesis.speak(utterance.current);
+      setIsSpeaking(true);
+
+      // Listen for the end of speech
+      utterance.current.onend = () => {
+        setIsSpeaking(false);
+      };
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Enter") {
+        readProcedure(); // Call readProcedure when Enter is pressed
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isSpeaking]);
+
   const fetchSimplifiedText = async (text: string, index: number) => {
     try {
-      setIsLoading(prev => ({ ...prev, [index]: true }));
+      setIsLoading((prev) => ({ ...prev, [index]: true }));
 
       const response = await fetch("http://localhost:5000/simplify-text", {
         method: "POST",
@@ -156,26 +195,21 @@ export default function Procedure() {
       if (response.ok) {
         const data = await response.json();
         const simplified = data.simplified_text || "Simplified text not found.";
-
-        setSimplifiedTexts(prev => ({ ...prev, [index]: simplified }));
+        setSimplifiedTexts((prev) => ({ ...prev, [index]: simplified }));
         setSimplifiedText(simplified);
       } else {
         const errorMessage = "Error occurred while simplifying text.";
-        setSimplifiedTexts(prev => ({ ...prev, [index]: errorMessage }));
+        setSimplifiedTexts((prev) => ({ ...prev, [index]: errorMessage }));
         setSimplifiedText(errorMessage);
       }
     } catch (error) {
       console.error("API request failed:", error);
-      setSimplifiedTexts(prev => ({ ...prev, [index]: "Failed to connect to simplification service." }));
+      setSimplifiedTexts((prev) => ({ ...prev, [index]: "Failed to connect to simplification service." }));
     } finally {
-      setIsLoading(prev => ({ ...prev, [index]: false }));
+      setIsLoading((prev) => ({ ...prev, [index]: false }));
     }
   };
 
-  /**
-   * Handles text selection for simplification
-   * @param index - The index of the selected step
-   */
   const handleTextSelection = (index: number) => {
     const selection = window.getSelection();
     if (selection && selection.toString().trim()) {
@@ -185,10 +219,6 @@ export default function Procedure() {
     }
   };
 
-  /**
-   * Toggles the visibility of simplified text for a step
-   * @param index - The index of the clicked step
-   */
   const handleTextClick = (index: number) => {
     setSelectedIndexes(prev => {
       const newIndexes = new Set(prev);
@@ -201,7 +231,6 @@ export default function Procedure() {
     });
   };
 
-  // Component for rendering individual steps
   const StepItem = ({ step, index }: { step: Step; index: number }) => {
     if (step.isHeading) {
       return (
@@ -213,34 +242,32 @@ export default function Procedure() {
     }
 
     return (
-      <>
-        <div className="mb-4 group">
-          <div
-            className="text-lg text-gray-200 cursor-pointer transition-colors duration-200 
-                   hover:text-white hover:bg-gray-800 p-2 rounded-md"
-            onMouseUp={() => handleTextSelection(index)}
-            onClick={() => handleTextClick(index)}
-          >
-            {step.text}
-            <span className="hidden group-hover:inline-block ml-2 text-xs text-blue-400">
-              {selectedIndexes.has(index) ? "Click to hide" : "Click to simplify"}
-            </span>
-          </div>
-
-          {selectedIndexes.has(index) && (
-            <div className="mt-2 p-3 bg-gray-800 bg-opacity-90 text-white rounded-lg border-l-4 border-blue-500 transition-all duration-300">
-              {isLoading[index] ? (
-                <div className="flex items-center justify-center py-4">
-                  <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="ml-2 text-blue-400">Simplifying...</span>
-                </div>
-              ) : (
-                <p className="text-md">{simplifiedTexts[index] || "Select text to simplify"}</p>
-              )}
-            </div>
-          )}
+      <div className="mb-4 group">
+        <div
+          className="text-lg text-gray-200 cursor-pointer transition-colors duration-200 
+                 hover:text-white hover:bg-gray-800 p-2 rounded-md"
+          onMouseUp={() => handleTextSelection(index)}
+          onClick={() => handleTextClick(index)}
+        >
+          {step.text}
+          <span className="hidden group-hover:inline-block ml-2 text-xs text-blue-400">
+            {selectedIndexes.has(index) ? "Click to hide" : "Click to simplify"}
+          </span>
         </div>
-      </>
+
+        {selectedIndexes.has(index) && (
+          <div className="mt-2 p-3 bg-gray-800 bg-opacity-90 text-white rounded-lg border-l-4 border-blue-500 transition-all duration-300">
+            {isLoading[index] ? (
+              <div className="flex items-center justify-center py-4">
+                <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <span className="ml-2 text-blue-400">Simplifying...</span>
+              </div>
+            ) : (
+              <p className="text-md">{simplifiedTexts[index] || "Select text to simplify"}</p>
+            )}
+          </div>
+        )}
+      </div>
     );
   };
 
@@ -265,98 +292,102 @@ export default function Procedure() {
               <Link href={item.path}>
                 <div
                   className={`px-4 py-2 text-lg font-semibold text-transparent bg-clip-text 
-                            bg-gradient-to-r from-blue-400 via-purple-500 to-violet-600 
-                            hover:text-gray-300 transition-all duration-300 cursor-pointer 
-                            ${pathname === item.path
-                      ? "underline decoration-purple-500 underline-offset-4"
-                      : ""
+                              bg-gradient-to-r from-blue-400 via-purple-500 to-violet-600 
+                              hover:text-gray-300 transition-all duration-300 cursor-pointer 
+                              ${pathname === item.path
+                    ? "underline decoration-purple-500 underline-offset-4"
+                    : ""
                     }`}
                 >
-                  {item.name}
-                </div>
-              </Link>
-            </motion.div>
-          ))}
-        </div>
-      </motion.nav>
+              {item.name}
+            </div>
+          </Link>
+        </motion.div>
+      ))}
+    </div>
+  </motion.nav>
 
-      <header className="max-w-4xl mx-auto mb-12 text-center pt-20">
-        <h1 className="text-5xl font-extrabold text-transparent bg-clip-text 
-                     bg-gradient-to-r from-blue-400 via-purple-500 to-violet-600 pb-2">
-          Ohm's Law Procedure
-        </h1>
-        <p className="text-gray-400 mt-4 text-lg">
-          Interactive guide with text simplification
-        </p>
-      </header>
+    <header className="max-w-4xl mx-auto mb-12 text-center pt-20">
+      <h1 className="text-5xl font-extrabold text-transparent bg-clip-text 
+                   bg-gradient-to-r from-blue-400 via-purple-500 to-violet-600 pb-2">
+        Ohm's Law Procedure
+      </h1>
+      <p className="text-gray-400 mt-4 text-lg">
+        Interactive guide with text simplification
+      </p>
+    </header>
 
-      {/* Instruction card */}
-      <div className="fixed top-1/2 left-20 transform -translate-y-1/2 bg-gray-800 p-5 text-center 
-                     rounded-lg shadow-xl border border-gray-700 max-w-xs z-10 opacity-90 hover:opacity-100 transition-opacity">
-        <h3 className="text-blue-400 font-semibold mb-2">How to use</h3>
-        <p className="text-gray-300">
-          1. Select text you want to simplify
-        </p>
-        <p className="text-gray-300">
-          2. Click on the text to toggle simplified view
-        </p>
-        <div className="mt-3 text-xs text-gray-500">
-          Simplified text appears below the selected text
-        </div>
+    {/* Instruction card */}
+    <div className="fixed top-1/2 left-20 transform -translate-y-1/2 bg-gray-800 p-5 text-center 
+                   rounded-lg shadow-xl border border-gray-700 max-w-xs z-10 opacity-90 hover:opacity-100 transition-opacity">
+      <h3 className="text-blue-400 font-semibold mb-2">How to use</h3>
+      <p className="text-gray-300">
+        1. Select text you want to simplify
+      </p>
+      <p className="text-gray-300">
+        2. Click on the text to toggle simplified view
+      </p>
+      <p className="text-gray-300">
+        3. Press "Enter" to listen to the entire procedure or pause it.
+      </p>
+      <div className="mt-3 text-xs text-gray-500">
+        Simplified text appears below the selected text
       </div>
+    </div>
 
-      <main className="max-w-3xl mx-auto bg-gray-900 bg-opacity-60 rounded-xl p-6 shadow-2xl">
-        <div className="space-y-2">
-          {steps.map((step, index) => (
-            <StepItem key={index} step={step} index={index} />
-          ))}
-        </div>
-      </main>
+    <main className="max-w-3xl mx-auto bg-gray-900 bg-opacity-60 rounded-xl p-6 shadow-2xl">
+      <div className="space-y-2">
+        {steps.map((step, index) => (
+          <StepItem key={index} step={step} index={index} />
+        ))}
+      </div>
+    </main>
 
-      <footer className="max-w-3xl mx-auto mt-8 text-center text-gray-500 text-sm">
-        <p>Olabs  &copy; {new Date().getFullYear()}</p>
-      </footer>
+    <footer className="max-w-3xl mx-auto mt-8 text-center text-gray-500 text-sm">
+      <p>Olabs  © {new Date().getFullYear()}</p>
+    </footer>
 
-      {/* Chatbox Toggle */}
-      {!isChatboxVisible && (
-        <div className="fixed top-1/2 right-4 transform -translate-y-1/2 z-20">
+
+    {/* Chatbox Toggle */}
+    {!isChatboxVisible && (
+      <div className="fixed top-1/2 right-4 transform -translate-y-1/2 z-20">
+        <motion.button
+          onClick={() => setIsChatboxVisible(!isChatboxVisible)}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          className="bg-gray-800 text-white p-3 rounded-full shadow-lg"
+        >
+          <FaArrowLeft />
+        </motion.button>
+      </div>
+    )}
+
+    {/* Chatbox */}
+    <motion.div
+      initial={{ x: "100%" }}
+      animate={{ x: isChatboxVisible ? "0%" : "100%" }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      className="fixed top-0 right-0 h-full w-[28rem] z-10"
+    >
+      <Chatbox />
+      {isChatboxVisible && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="absolute top-1/2 left-[-2rem] transform -translate-y-1/2 z-20"
+        >
           <motion.button
             onClick={() => setIsChatboxVisible(!isChatboxVisible)}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             className="bg-gray-800 text-white p-3 rounded-full shadow-lg"
           >
-            <FaArrowLeft />
+            <FaArrowRight />
           </motion.button>
-        </div>
+        </motion.div>
       )}
-
-      {/* Chatbox */}
-      <motion.div
-        initial={{ x: "100%" }}
-        animate={{ x: isChatboxVisible ? "0%" : "100%" }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="fixed top-0 right-0 h-full w-[28rem] z-10"
-      >
-        <Chatbox />
-        {isChatboxVisible && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-            className="absolute top-1/2 left-[-2rem] transform -translate-y-1/2 z-20"
-          >
-            <motion.button
-              onClick={() => setIsChatboxVisible(!isChatboxVisible)}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="bg-gray-800 text-white p-3 rounded-full shadow-lg"
-            >
-              <FaArrowRight />
-            </motion.button>
-          </motion.div>
-        )}
-      </motion.div>
-    </div>
-  );
+    </motion.div>
+  </div>
+);
 }
