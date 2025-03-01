@@ -17,7 +17,7 @@ const boxItems = [
     { name: "Procedure", path: "/Topic_select/Physics", subject: "Physics" },
 ];
 
-const ChatBot = () => {
+const Physics = () => {
     const pathname = usePathname();
     const router = useRouter();
 
@@ -140,4 +140,4 @@ const ChatBot = () => {
     );
 };
 
-export default ChatBot;
+export default Physics;
