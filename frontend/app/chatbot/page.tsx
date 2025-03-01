@@ -62,9 +62,53 @@ const ChatBot = () => {
         setInput("");
     };
 
-    return (
-        <div className="relative min-h-screen bg-black text-white flex items-center justify-center p-6">
+    // Handle when content is dropped into the chat
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        const text = e.dataTransfer.getData("text/plain");
+        if (text) {
+            const userMessage: Message = { text, sender: "user" };
+            setMessages((prev) => [...prev, userMessage]);
+            handleSendWithText(text); // Send the message to the server or handle locally
+        }
+    };
 
+    // Allow the drop
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+    };
+
+    // Send a message with the provided text
+    const handleSendWithText = async (text: string) => {
+        const userMessage: Message = { text, sender: "user" };
+        setMessages((prev) => [...prev, userMessage]);
+
+        try {
+            const response = await fetch("http://127.0.0.1:5000/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: text }),
+            });
+
+            const responseData = await response.json();
+
+            const botMessage: Message = {
+                text: responseData.response || responseData.error || "Sorry, I didn't understand that.",
+                sender: "bot",
+            };
+            setMessages((prev) => [...prev, botMessage]);
+        } catch (error) {
+            console.error("Error fetching from Flask:", error);
+            setMessages((prev) => [...prev, { text: "Error fetching response. Try again.", sender: "bot" }]);
+        }
+    };
+
+    return (
+        <div 
+            className="relative min-h-screen bg-black text-white flex items-center justify-center p-6"
+            onDrop={handleDrop} // Add the drop event
+            onDragOver={handleDragOver} // Add the drag over event
+        >
             <motion.nav
                 initial={{ y: -50, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -84,12 +128,12 @@ const ChatBot = () => {
                             <Link href={item.path}>
                                 <div
                                     className={`px-4 py-2 text-lg font-semibold text-transparent bg-clip-text 
-                            bg-gradient-to-r from-blue-400 via-purple-500 to-violet-600 
-                            hover:text-gray-300 transition-all duration-300 cursor-pointer 
-                            ${pathname === item.path
-                                            ? "underline decoration-purple-500 underline-offset-4"
-                                            : ""
-                                        }`}
+                                    bg-gradient-to-r from-blue-400 via-purple-500 to-violet-600 
+                                    hover:text-gray-300 transition-all duration-300 cursor-pointer 
+                                    ${pathname === item.path
+                                        ? "underline decoration-purple-500 underline-offset-4"
+                                        : ""
+                                    }`}
                                 >
                                     {item.name}
                                 </div>
