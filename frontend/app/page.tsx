@@ -8,7 +8,7 @@ export default function Home() {
 
   const categories = [
     { name: "PHYSICS", gradient: "from-purple-500 to-blue-400", path: "/Physics" },
-    { name: "CHEMISTRY", gradient: "from-pink-500 to-purple-400" },
+    { name: "CHEMISTRY", gradient: "from-pink-500 to-purple-400", path: "/chemistry" },
     { name: "BIOLOGY", gradient: "from-green-500 to-teal-400" },
     { name: "MATHS", gradient: "from-orange-500 to-yellow-400" },
     { name: "LANGUAGE", gradient: "from-cyan-500 to-blue-400" },
@@ -111,7 +111,7 @@ export default function Home() {
                   </h3>
                 </div>
                 <div className="mt-4 text-center relative">
-                  <Link href={category.path || "#"}> 
+                  <Link href={category.path || "#"}>
                     <button className={`px-4 py-2 text-sm font-semibold rounded-lg 
                                       bg-gradient-to-r ${category.gradient} text-black 
                                       hover:opacity-80 transition-all`}>
