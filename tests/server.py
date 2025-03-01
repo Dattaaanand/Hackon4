@@ -4,6 +4,7 @@ import requests
 import os
 import re
 from dotenv import load_dotenv
+import random  # Import the random module
 
 # Load environment variables
 load_dotenv()
@@ -104,7 +105,7 @@ def compare():
 # Difficulty levels mapping
 difficulty_levels = ["Basic", "Intermediate", "Advanced"]
 current_level = 1  # Start at "Intermediate"
-question_data = {}  # Store last generated question
+question_data = []  # Store last generated questions
 
 def generate_question(level="Intermediate", topic="Ohm's Law"):
     """Generate an MCQ using AI based on difficulty level."""
@@ -115,9 +116,7 @@ def generate_question(level="Intermediate", topic="Ohm's Law"):
     headers = {"Content-Type": "application/json"}
 
     prompt = f"""
-    You are a physics tutor. Generate a **multiple-choice question (MCQ)** on **{topic}**.
-
-    **Difficulty Level:** {level}
+    You are a physics tutor. Generate a **multiple-choice question (MCQ)** on **{topic}**. **Difficulty Level:** {level}
 
     Format:
     - **Question:** <question>
@@ -159,7 +158,6 @@ def generate_question(level="Intermediate", topic="Ohm's Law"):
         if len(options_dict) != 4 or correct_answer not in options_dict:
             return {"error": "Invalid options or answer key from AI."}
 
-        global question_data
         question_data = {
             "question": question,
             "A": options_dict["A"],
@@ -173,6 +171,19 @@ def generate_question(level="Intermediate", topic="Ohm's Law"):
 
     except requests.exceptions.RequestException as e:
         return {"error": f"API Error: {e}"}
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return {"error": "An unexpected error occurred."}
+
+def generate_questions(num_questions=2, level="Intermediate", topic="Ohm's Law"):
+    """Generate a list of MCQs."""
+    questions = []
+    for _ in range(num_questions):
+        question = generate_question(level=level, topic=topic)
+        if "error" in question:
+            return {"error": question["error"]}
+        questions.append(question)
+    return questions
 
 @app.route("/simplify-text", methods=["POST"])
 def simplify_text():
@@ -225,37 +236,60 @@ def simplify_text():
 
 @app.route("/generate-question", methods=["GET"])
 def get_question():
-    """Return an MCQ question based on current difficulty."""
-    question = generate_question(level=difficulty_levels[current_level])
-    return jsonify(question)
+    """Return two MCQ questions based on current difficulty."""
+    global question_data
+    questions = generate_questions(num_questions=2, level=difficulty_levels[current_level]) # Generate two questions
+    if "error" in questions:
+        return jsonify(questions)  # Return error if any
+
+    question_data = questions  # Store the generated questions
+    return jsonify(questions)
 
 @app.route("/check-answer", methods=["POST"])
 def check_answer():
-    """Validate user's answer, adjust difficulty, and provide an explanation."""
-    global current_level
-
+    """Validate user's answers, adjust difficulty, and provide explanations."""
+    global current_level, question_data
     data = request.json
-    selected_answer = data.get("selected_answer")
+    selected_answers = data.get("selected_answers")  # Expecting a list of answers
 
     if not question_data:
-        return jsonify({"error": "No question generated yet!"}), 400
+        return jsonify({"error": "No questions generated yet!"}), 400
 
-    correct_answer = question_data.get("answer")
-    is_correct = selected_answer == correct_answer
-    message = "✅ Correct! Next question will be harder." if is_correct else "❌ Incorrect! Next question will be easier."
+    if not isinstance(selected_answers, list) or len(selected_answers) != len(question_data):
+        return jsonify({"error": "Incorrect number of answers provided."}), 400
 
-    # Adjust difficulty
-    current_level = min(current_level + 1, 2) if is_correct else max(current_level - 1, 0)
+    correct_answers = [q["answer"] for q in question_data]
+    is_correct = [selected_answers[i] == correct_answers[i] for i in range(len(question_data))]
 
-    explanation = generate_explanation(
-        question_data["question"], question_data[correct_answer], question_data
-    )
+    # Adjust difficulty based on performance
+    if all(is_correct):
+        message = "✅ Correct! Next questions will be harder."
+        current_level = min(current_level + 1, 2)
+    elif not any(is_correct):
+        message = "❌ Incorrect! Next questions will be easier."
+        current_level = max(current_level - 1, 0)
+    else:
+        message = "🤷‍♀️ Mixed results! Difficulty remains the same."
+    
+    explanations = [
+        generate_explanation(
+            question_data[i]["question"], question_data[i][correct_answers[i]], question_data[i]
+        ) for i in range(len(question_data))
+    ]
+
+    results = []
+    for i in range(len(question_data)):
+        results.append({
+            "question": question_data[i]["question"],
+            "correct_answer": correct_answers[i],
+            "is_correct": is_correct[i],
+            "explanation": explanations[i],
+        })
 
     return jsonify({
         "message": message,
         "new_level": difficulty_levels[current_level],
-        "correct_answer": correct_answer,
-        "explanation": explanation,
+        "results": results,
     })
 
 def generate_explanation(question, correct_answer, question_data):
