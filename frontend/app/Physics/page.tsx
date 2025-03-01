@@ -13,8 +13,8 @@ const navItems = [
 
 const boxItems = [
     { name: "Attend Test", path: "/AttendTest", subject: "Physics" },
-    { name: "Quizzes", path: "/Quizzes", subject: "Physics" },
-    { name: "Procedure", path: "/Topic_select", subject: "Physics" },
+    { name: "Quizzes", path: "/Select_topic/Physics", subject: "Physics" }, // Dynamically passing subject
+    { name: "Procedure", path: "/Topic_select/Physics", subject: "Physics" },
 ];
 
 const ChatBot = () => {
@@ -22,8 +22,13 @@ const ChatBot = () => {
     const router = useRouter();
 
     // Handle Procedure button click
-    const handleProcedureClick = (subject: string | number | boolean) => {
-        router.push(`/Topic_select/${subject}`); // Only pass subject, no need for topicName
+    const handleProcedureClick = (subject: string) => {
+        router.push(`/Topic_select/${subject}`);
+    };
+
+    // Handle Subject Click
+    const handleSubjectClick = (subject: string | number | boolean) => {
+        router.push(`/Select_topic?subject=${encodeURIComponent(subject)}`);
     };
 
     return (
@@ -96,6 +101,17 @@ const ChatBot = () => {
                                         <div
                                             className="mt-4 text-center relative"
                                             onClick={() => handleProcedureClick(item.subject)}
+                                        >
+                                            <button className="px-4 py-2 text-sm font-semibold rounded-lg 
+                                      bg-gradient-to-r from-blue-400 via-purple-500 to-violet-600 
+                                      text-black hover:opacity-80 transition-all">
+                                                Select Topic
+                                            </button>
+                                        </div>
+                                    ) : item.name === "Quizzes" ? (
+                                        <div
+                                            className="mt-4 text-center relative"
+                                            onClick={() => handleSubjectClick(item.subject)}
                                         >
                                             <button className="px-4 py-2 text-sm font-semibold rounded-lg 
                                       bg-gradient-to-r from-blue-400 via-purple-500 to-violet-600 
