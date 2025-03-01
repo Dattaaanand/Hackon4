@@ -4,6 +4,8 @@ import DOMPurify from "dompurify";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import Chatbox from "../../../components/chatbot"; // Adjust the import path as needed
+import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
 
 const navItems = [
   { name: "Home", path: "/" },
@@ -37,6 +39,7 @@ export default function Procedure() {
   const [selectedIndexes, setSelectedIndexes] = useState<Set<number>>(new Set());
   const [simplifiedTexts, setSimplifiedTexts] = useState<SimplifiedTextRecord>({});
   const [isLoading, setIsLoading] = useState<Record<number, boolean>>({});
+  const [isChatboxVisible, setIsChatboxVisible] = useState<boolean>(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -288,7 +291,7 @@ export default function Procedure() {
       </header>
 
       {/* Instruction card */}
-      <div className="fixed top-1/2 right-20 transform -translate-y-1/2 bg-gray-800 p-5 text-center 
+      <div className="fixed top-1/2 left-20 transform -translate-y-1/2 bg-gray-800 p-5 text-center 
                      rounded-lg shadow-xl border border-gray-700 max-w-xs z-10 opacity-90 hover:opacity-100 transition-opacity">
         <h3 className="text-blue-400 font-semibold mb-2">How to use</h3>
         <p className="text-gray-300">
@@ -313,6 +316,47 @@ export default function Procedure() {
       <footer className="max-w-3xl mx-auto mt-8 text-center text-gray-500 text-sm">
         <p>Olabs  &copy; {new Date().getFullYear()}</p>
       </footer>
+
+      {/* Chatbox Toggle */}
+      {!isChatboxVisible && (
+        <div className="fixed top-1/2 right-4 transform -translate-y-1/2 z-20">
+          <motion.button
+            onClick={() => setIsChatboxVisible(!isChatboxVisible)}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            className="bg-gray-800 text-white p-3 rounded-full shadow-lg"
+          >
+            <FaArrowLeft />
+          </motion.button>
+        </div>
+      )}
+
+      {/* Chatbox */}
+      <motion.div
+        initial={{ x: "100%" }}
+        animate={{ x: isChatboxVisible ? "0%" : "100%" }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        className="fixed top-0 right-0 h-full w-[28rem] z-10"
+      >
+        <Chatbox />
+        {isChatboxVisible && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+            className="absolute top-1/2 left-[-2rem] transform -translate-y-1/2 z-20"
+          >
+            <motion.button
+              onClick={() => setIsChatboxVisible(!isChatboxVisible)}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="bg-gray-800 text-white p-3 rounded-full shadow-lg"
+            >
+              <FaArrowRight />
+            </motion.button>
+          </motion.div>
+        )}
+      </motion.div>
     </div>
   );
 }
